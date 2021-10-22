@@ -7,6 +7,7 @@ from collections import namedtuple
 
 gff = sys.argv[1]
 
+# gff ="gff_for_test/Papt_JHAMT_nester_out.gff"
 # gff_file to dict
 # dict structure
 # {'te_id':{'seq':'seq_name','te_base':'int', 'feature':{'nested_repeat': ['start,'end','attributes'], 'repeat_fragment': [[]], 
@@ -18,6 +19,9 @@ def feature_list(l):
     return fList
 
 def fill_in_dict(gff):
+    attr_list = ["repeat_fragment", "polypeptide_conserved_region", 
+    "primer_binding_site", "RR_tract", 
+    "long_terminal_repeat", "target_site_duplication"]
     in_dict = {}
     te_id = 0
     reg = r'=(TE_BASE \d+);'
@@ -32,44 +36,15 @@ def fill_in_dict(gff):
                     te = re.search(reg, l).group(1).replace("TE_BASE ", "")
                     in_dict[teID] = {'seq':chrom, 'te_base':te,'feature':{'nested_repeat':[]}}
                     in_dict[teID]['feature']["nested_repeat"] = feature_list(l)
+                    te_id += 1
                 elif chrom in l and te + ";" in l and "nested_repeat" not in l:
-                    if "repeat_fragment" in l:
-                        if "repeat_fragment" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["repeat_fragment"] = []
-                            in_dict[teID]['feature']["repeat_fragment"].append(feature_list(l))
-                        else:
-                            in_dict[teID]['feature']["repeat_fragment"].append(feature_list(l))
-                    if "polypeptide_conserved_region" in l:
-                        if "polypeptide_conserved_region" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["polypeptide_conserved_region"] = []
-                            in_dict[teID]['feature']["polypeptide_conserved_region"].append(feature_list(l))
-                        else:
-                            in_dict[teID]['feature']["polypeptide_conserved_region"].append(feature_list(l))
-                    if "primer_binding_site" in l:
-                        if "primer_binding_site" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["primer_binding_site"] = ""
-                            in_dict[teID]['feature']["primer_binding_site"] = feature_list(l)
-                        else:
-                            in_dict[teID]['feature']["primer_binding_site"] = feature_list(l)
-                    if "RR_tract" in l:
-                        if "RR_tract" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["RR_tract"] = ""
-                            in_dict[teID]['feature']["RR_tract"] = feature_list(l)
-                        else:
-                            in_dict[teID]['feature']["RR_tract"] = feature_list(l)
-                    if "long_terminal_repeat" in l:
-                        if "long_terminal_repeat" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["long_terminal_repeat"] = []
-                            in_dict[teID]['feature']["long_terminal_repeat"].append(feature_list(l))
-                        else:
-                            in_dict[teID]['feature']["long_terminal_repeat"].append(feature_list(l))
-                    if "target_site_duplication" in l:
-                        if "target_site_duplication" not in in_dict[teID]['feature'].keys():
-                            in_dict[teID]['feature']["target_site_duplication"] = []
-                            in_dict[teID]['feature']["target_site_duplication"].append(feature_list(l))
-                        else:
-                            in_dict[teID]['feature']["target_site_duplication"].append(feature_list(l))
-                te_id += 1
+                    for attr in attr_list:
+                        if attr in l:
+                            if attr not in in_dict[teID]['feature'].keys():
+                                in_dict[teID]['feature'][attr] = []
+                                in_dict[teID]['feature'][attr].append(feature_list(l))
+                            else:
+                                in_dict[teID]['feature'][attr].append(feature_list(l))                
     return in_dict
 
 # dict2object transformation:
@@ -119,4 +94,19 @@ class gff_line:
             self.Parent = atr_list[1]
             self.name = atr_list[2]
             self.color = atr_list[3]
-           
+
+"""
+TODO: solve fragmented TEs
+TODECIDE: using OOP or pure functional and/or procedural notation
+Next steps:
+A. Modul for counting basic stuff (including generation of TE IDs lists):
+    1. seq count; TEs count - fragmented versus non-fragmented
+    2. filter all TEs with TSD -> tsdTEs
+    3. number of tsdTEs annotated 
+        3.1 at least one prot. domain annotated
+    4. tsdTEs -> filt for presence of PBS and PPT -> ppTsdtTEs
+        4.1 ppTsdtTEs with prot. domain (at least one)
+        4.2 ppTsdtTEs with NO prot. domain -> potential LARDs and/or
+B. Modul for generation of GFFs based on filtered TE IDs lists
+    
+"""
